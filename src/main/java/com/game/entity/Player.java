@@ -1,23 +1,36 @@
 package com.game.entity;
 
+import javax.persistence.*;
 import java.util.Date;
 
-
+@Entity
+@Table(name = "player", schema = "rpg")
 public class Player {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
+    @Column(name = "name")
     private String name;
 
+    @Column(name = "title")
     private String title;
 
+    @Column(name = "race")
     private Race race;
 
+    @Column(name = "profession")
     private Profession profession;
 
+    @Column(name = "birthday")
+    @Temporal(TemporalType.TIMESTAMP)
     private Date birthday;
 
+    @Column(name = "banned")
     private Boolean banned;
 
+    @Column(name = "level")
     private Integer level;
 
     public Player() {
