@@ -1,14 +1,15 @@
 package com.game.repository;
 
 import com.game.entity.Player;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.cfg.Environment;
+import org.hibernate.query.Query;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.PreDestroy;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 
 @Repository(value = "db")
 public class PlayerRepositoryDB implements IPlayerRepository {
@@ -25,6 +26,7 @@ public class PlayerRepositoryDB implements IPlayerRepository {
         properties.setProperty("hibernate.show_sql", "true");
         properties.setProperty("hibernate.hbm2ddl.auto", "update");
 
+
         sessionFactory = new Configuration()
                 .addProperties(properties)
                 .addAnnotatedClass(Player.class)
@@ -33,12 +35,28 @@ public class PlayerRepositoryDB implements IPlayerRepository {
 
     @Override
     public List<Player> getAll(int pageNumber, int pageSize) {
-        return null;
+        List<Player> players;
+        List<Player> playersResult = new ArrayList<>();
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            players = session.createNativeQuery("SELECT * FROM rpg.player", Player.class).list();
+            session.getTransaction().commit();
+        }
+            int start = pageNumber * pageSize;
+            int end = start + pageSize;
+            for (int i = 0; i < pageSize; i++) {
+                playersResult.add(players.get(start + i));
+            }
+        return players.subList(start, end);
+
     }
 
     @Override
     public int getAllCount() {
-        return 0;
+        try (Session session = sessionFactory.openSession()) {
+            Query<Integer> result = session.createNamedQuery("Player.getAllCount", int.class);
+            return result.getSingleResult();
+        }
     }
 
     @Override
@@ -63,6 +81,6 @@ public class PlayerRepositoryDB implements IPlayerRepository {
 
     @PreDestroy
     public void beforeStop() {
-
+        sessionFactory.close();
     }
 }
