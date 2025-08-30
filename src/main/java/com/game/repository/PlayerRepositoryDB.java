@@ -3,6 +3,7 @@ package com.game.repository;
 import com.game.entity.Player;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.cfg.Environment;
 import org.hibernate.query.Query;
@@ -61,21 +62,73 @@ public class PlayerRepositoryDB implements IPlayerRepository {
 
     @Override
     public Player save(Player player) {
-        return null;
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            session.persist(player);
+            session.getTransaction().commit();
+        }
+        return player;
     }
 
     @Override
     public Player update(Player player) {
-        return null;
+        Player player1 = null;
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            try {
+                player1 = session.get(Player.class, player.getId());
+                if (player1 != null) {
+                    player1.setName(player.getName());
+                    player1.setBanned(player.getBanned());
+                    player1.setProfession(player.getProfession());
+                    player1.setRace(player.getRace());
+                    player1.setTitle(player.getTitle());
+                    player1.setBirthday(player.getBirthday());
+                    player1.setLevel(player.getLevel());
+                }
+                session.getTransaction().commit();
+            } catch (Exception e) {
+                e.printStackTrace();
+                session.getTransaction().rollback();
+            }
+        }
+        return player1;
     }
 
     @Override
     public Optional<Player> findById(long id) {
-        return Optional.empty();
+        Optional<Player> player = Optional.empty();
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            try {
+                Query<Player> query = session.createQuery("from Player where id = :id", Player.class);
+                query.setParameter("id", id);
+                player = Optional.of(query.getSingleResult());
+            } catch (Exception e) {
+                session.getTransaction().rollback();
+                e.printStackTrace();
+            }
+            session.getTransaction().commit();
+        }
+        return player;
     }
 
     @Override
     public void delete(Player player) {
+        Player player1 = null;
+        try (Session session = sessionFactory.openSession()) {
+            session.beginTransaction();
+            player1 = session.get(Player.class, player.getId());
+            try {
+                if (player1 != null) {
+                    session.delete(player1);
+                }
+            } catch (Exception e) {
+                session.getTransaction().rollback();
+                throw new RuntimeException(e);
+            }
+            session.getTransaction().commit();
+        }
 
     }
 
